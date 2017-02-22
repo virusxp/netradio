@@ -4,6 +4,35 @@
 #include <cstdint>
 #include <atomic>
 #include <thread>
+#include <queue>
+#include <string>
+
+/*
+template <class T>
+class IOElement
+{
+    private:
+        T val;
+        bool dir;
+
+    public:
+        static const bool INPUT  = false;
+        static const bool OUTPUT = true;
+
+        IOElement(T value, bool direction)
+        {
+            this->val = value;
+            this->dir = direction;
+        }
+
+        //virtual ~IOElement();
+
+        bool getValue(T* value)
+        {
+            *value = this->val;
+            return this->dir;
+        }
+};*/
 
 class TCPServer_IncomingClient
 {
@@ -14,10 +43,17 @@ class TCPServer_IncomingClient
 
         std::thread handlerThread;
         std::atomic<bool> threadKiller;
+        std::queue<std::string> input;
+        std::mutex inputMtx;
+        std::queue<std::string> output;
+        std::mutex outputMtx;
 
     public:
         TCPServer_IncomingClient(int sock, struct sockaddr clientAddr, socklen_t addrLen);
         virtual ~TCPServer_IncomingClient();
+
+        void send(std::string message);
+        int receive(std::string* message);
 };
 
 class TCPServer
