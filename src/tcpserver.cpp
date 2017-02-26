@@ -1,6 +1,9 @@
 #include "tcpserver.h"
 
+#include <errno.h>
+#include <sstream>
 #include <sys/socket.h>
+#include <netinet/in.h>
 
 void handlerThread(int* socketPtr, std::queue<std::string> inputQu, std::mutex* in, 
     std::queue<std::string> outputQu, std::mutex out, std::atomic<bool>* killThread)
@@ -28,14 +31,14 @@ TCPServer_IncomingClient::~TCPServer_IncomingClient()
     this->handlerThread.join(); //error handling !
 }
 
-void send(std::string message)
+void TCPServer_IncomingClient::send(std::string message)
 {
     std::unique_lock<std::mutex> lck(this->outputMtx);
 
     this->input.push(message);
 }
 
-int receive(std::string* message)
+int TCPServer_IncomingClient::receive(std::string* message)
 {
     if(this->output.size == 0)
         return -1;
@@ -71,14 +74,21 @@ TCPServer::TCPServer(int16_t serverport)
     this->port = serverport;
 
     this->sock = socket(AF_INET,SOCK_STREAM,0);
-    if(this->sock == -1);//include exception
+    if(this->sock == -1)
+    	throw TCPServerException("[Exception] Could not open socket");
 
     struct sockaddr_in server;
     server.sin_family = AF_INET;
     server.sin_addr.s_addr = INADDR_ANY;
     server.sin_port = htons(this->port);
 
-    if(bind(socket_desc,(struct sockaddr*)&server,sizeof(server)) < 0);//include exception
+    if(bind(this->sock,(struct sockaddr*)&server,(socklen_t)sizeof(server)) < 0)
+    {
+    	std::stringstream str;
+    	str << "[Exception] Could not bind address [port = " << this->port << "|errno = " << errno << "]";
+    	close(this->sock);
+    	throw TCPServerException(str.str().c_str());
+    }
 
     listen(this->sock,this->maxConnectionQueue);
 }

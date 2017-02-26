@@ -6,6 +6,8 @@
 #include <thread>
 #include <queue>
 #include <string>
+#include <mutex>
+#include <stdexcept>
 
 /*
 template <class T>
@@ -54,6 +56,14 @@ class TCPServer_IncomingClient
 
         void send(std::string message);
         int receive(std::string* message);
+};
+
+class TCPServerException : public std::runtime_error
+{
+	private:
+	public:
+		TCPServerException(const char* what_arg) : std::runtime_error(what_arg) {}
+		//virtual ~TCPServerException();
 };
 
 class TCPServer
